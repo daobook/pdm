@@ -66,14 +66,7 @@ if WINDOWS:
         buf = ctypes.create_unicode_buffer(1024)
         ctypes.windll.shell32.SHGetFolderPathW(None, csidl_const, None, 0, buf)
 
-        # Downgrade to short path name if have highbit chars. See
-        # <http://bugs.activestate.com/show_bug.cgi?id=85099>.
-        has_high_char = False
-        for c in buf:
-            if ord(c) > 255:
-                has_high_char = True
-                break
-        if has_high_char:
+        if has_high_char := any(ord(c) > 255 for c in buf):
             buf2 = ctypes.create_unicode_buffer(1024)
             if ctypes.windll.kernel32.GetShortPathNameW(buf.value, buf2, 1024):
                 buf = buf2
@@ -166,9 +159,10 @@ def support_ansi() -> bool:
         return (
             os.getenv("ANSICON") is not None
             or os.getenv("WT_SESSION") is not None
-            or "ON" == os.getenv("ConEmuANSI")
-            or "xterm" == os.getenv("Term")
+            or os.getenv("ConEmuANSI") == "ON"
+            or os.getenv("Term") == "xterm"
         )
+
 
     if not hasattr(sys.stdout, "fileno"):
         return False
@@ -332,10 +326,7 @@ class Installer:
         return bin_path
 
     def _post_install(self, venv_path: Path, bin_path: Path) -> None:
-        if WINDOWS:
-            script = bin_path / "pdm.exe"
-        else:
-            script = bin_path / "pdm"
+        script = bin_path / "pdm.exe" if WINDOWS else bin_path / "pdm"
         subprocess.check_call([str(script), "--help"])
         print()
         _echo(
@@ -366,11 +357,7 @@ class Installer:
             userbase = Path(site.getuserbase())
             bin_path = userbase / ("Scripts" if WINDOWS else "bin")
 
-        if WINDOWS:
-            script = bin_path / "pdm.exe"
-        else:
-            script = bin_path / "pdm"
-
+        script = bin_path / "pdm.exe" if WINDOWS else bin_path / "pdm"
         shutil.rmtree(self._path / "venv")
         script.unlink()
 

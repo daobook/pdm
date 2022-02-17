@@ -130,8 +130,7 @@ class BaseProvider(AbstractProvider):
         reqs = sorted(
             requirements[identifier], key=self.requirement_preference, reverse=True
         )
-        file_req = next((req for req in reqs if not req.is_named), None)
-        if file_req:
+        if file_req := next((req for req in reqs if not req.is_named), None):
             can = Candidate(file_req, self.repository.environment)
             can.metadata
             candidates = [can]

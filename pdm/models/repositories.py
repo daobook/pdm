@@ -304,9 +304,9 @@ class PyPIRepository(BaseRepository):
         results = []
 
         if pypi_simple.endswith("/simple"):
-            search_url = pypi_simple[:-6] + "search"
+            search_url = f'{pypi_simple[:-6]}search'
         else:
-            search_url = pypi_simple + "/search"
+            search_url = f'{pypi_simple}/search'
 
         with self.environment.get_finder() as finder:
             session = finder.session  # type: ignore

@@ -79,22 +79,21 @@ def compress_for_rename(paths: Iterable[str]) -> set[str]:
 def _script_names(script_name: str, is_gui: bool) -> Iterable[str]:
     yield script_name
     if os.name == "nt":
-        yield script_name + ".exe"
-        yield script_name + ".exe.manifest"
+        yield f'{script_name}.exe'
+        yield f'{script_name}.exe.manifest'
         if is_gui:
-            yield script_name + "-script.pyw"
+            yield f'{script_name}-script.pyw'
         else:
-            yield script_name + "-script.py"
+            yield f'{script_name}-script.py'
 
 
 def _cache_file_from_source(py_file: str) -> Iterable[str]:
-    py2_cache = py_file[:-3] + ".pyc"
+    py2_cache = f'{py_file[:-3]}.pyc'
     if os.path.isfile(py2_cache):
         yield py2_cache
     parent, base = os.path.split(py_file)
     cache_dir = os.path.join(parent, "__pycache__")
-    for path in glob.glob(os.path.join(cache_dir, base[:-3] + ".*.pyc")):
-        yield path
+    yield from glob.glob(os.path.join(cache_dir, f'{base[:-3]}.*.pyc'))
 
 
 def _get_file_root(path: str, base: str) -> str | None:
@@ -135,13 +134,9 @@ class BaseRemovePaths(abc.ABC):
         meta_location = os.path.normcase(dist._path.absolute())  # type: ignore
         dist_location = os.path.dirname(meta_location)
         if is_egg_link(dist):  # pragma: no cover
-            egg_link_path = cast("Path | None", getattr(dist, "link_file", None))
-            if not egg_link_path:
-                termui.logger.warn(
-                    "No egg link is found for editable distribution %s, do nothing.",
-                    dist.metadata["Name"],
-                )
-            else:
+            if egg_link_path := cast(
+                "Path | None", getattr(dist, "link_file", None)
+            ):
                 link_pointer = os.path.normcase(
                     egg_link_path.open("rb").readline().decode().strip()
                 )
@@ -152,6 +147,11 @@ class BaseRemovePaths(abc.ABC):
                     )
                 instance.add_path(str(egg_link_path))
                 instance.add_pth(link_pointer)
+            else:
+                termui.logger.warn(
+                    "No egg link is found for editable distribution %s, do nothing.",
+                    dist.metadata["Name"],
+                )
         elif dist.files:
             for file in dist.files:
                 location = dist.locate_file(file)
@@ -159,7 +159,7 @@ class BaseRemovePaths(abc.ABC):
                 bare_name, ext = os.path.splitext(location)
                 if ext == ".py":
                     # .pyc files are added by add_path()
-                    instance.add_path(bare_name + ".pyo")
+                    instance.add_path(f'{bare_name}.pyo')
 
         bin_dir = scheme["scripts"]
 
@@ -167,7 +167,7 @@ class BaseRemovePaths(abc.ABC):
             for script in os.listdir(os.path.join(meta_location, "scripts")):
                 instance.add_path(os.path.join(bin_dir, script))
                 if os.name == "nt":
-                    instance.add_path(os.path.join(bin_dir, script) + ".bat")
+                    instance.add_path(f'{os.path.join(bin_dir, script)}.bat')
 
         # find console_scripts
         _scripts_to_remove: list[str] = []
@@ -190,8 +190,7 @@ class BaseRemovePaths(abc.ABC):
         if path.endswith(".py"):
             self._paths.update(_cache_file_from_source(normalized_path))
         elif path.replace("\\", "/").endswith(".dist-info/REFER_TO"):
-            line = open(path, "rb").readline().decode().strip()
-            if line:
+            if line := open(path, "rb").readline().decode().strip():
                 self.refer_to = line
 
 

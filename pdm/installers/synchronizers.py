@@ -264,22 +264,19 @@ class Synchronizer:
         lines = []
         if to_add:
             lines.append(termui.bold("Packages to add:"))
-            for can in to_add:
-                lines.append(f"  - {can.format()}")
+            lines.extend(f"  - {can.format()}" for can in to_add)
         if to_update:
             lines.append(termui.bold("Packages to update:"))
-            for prev, cur in to_update:
-                lines.append(
-                    f"  - {termui.green(cur.name, bold=True)} "
-                    f"{termui.yellow(prev.version)} -> {termui.yellow(cur.version)}"
-                )
+            lines.extend(
+                f"  - {termui.green(cur.name, bold=True)} "
+                f"{termui.yellow(prev.version)} -> {termui.yellow(cur.version)}"
+                for prev, cur in to_update
+            )
+
         if to_remove:
             lines.append(termui.bold("Packages to remove:"))
-            for dist in to_remove:
-                lines.append(
-                    f"  - {termui.green(dist.metadata['Name'], bold=True)} "
-                    f"{termui.yellow(dist.version)}"
-                )
+            lines.extend(f"  - {termui.green(dist.metadata['Name'], bold=True)} "
+                    f"{termui.yellow(dist.version)}" for dist in to_remove)
         if lines:
             self.ui.echo("\n".join(lines))
 
@@ -317,8 +314,7 @@ class Synchronizer:
         def update_progress(
             future: Union[Future, DummyFuture], kind: str, key: str
         ) -> None:
-            error = future.exception()
-            if error:
+            if error := future.exception():
                 exc_info = (type(error), error, error.__traceback__)
                 termui.logger.exception("Error occurs: ", exc_info=exc_info)
                 failed_jobs.append((kind, key))

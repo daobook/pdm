@@ -167,7 +167,7 @@ class Command(BaseCommand):
                 raise PdmUsageError(
                     "Python callable must be in the form <module_name>:<callable_name>"
                 )
-            short_name = "_" + hashlib.sha1(module.encode()).hexdigest()[:6]
+            short_name = f'_{hashlib.sha1(module.encode()).hexdigest()[:6]}'
             if re.search(r"\(.*?\)", func) is None:
                 func += "()"
             args = [

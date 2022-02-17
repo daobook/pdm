@@ -39,12 +39,11 @@ class Marker(PackageMarker):
             for marker in self._markers
             if marker != "and" and marker not in py_markers
         ]
-        new_markers = join_list_with(rest, "and")
-        if not new_markers:
-            marker = None
-        else:
+        if new_markers := join_list_with(rest, "and"):
             marker = self.copy()
             marker._markers = new_markers
+        else:
+            marker = None
         return marker, _build_pyspec_from_marker(join_list_with(py_markers, "and"))
 
 
@@ -65,13 +64,12 @@ def split_marker_extras(
 
     def extract_extras(submarker: Union[tuple, list]) -> List[str]:
         if isinstance(submarker, tuple):
-            if submarker[0].value == "extra":
-                if submarker[1].value == "==":
-                    return [submarker[2].value]
-                elif submarker[1].value == "in":
-                    return [v.strip() for v in submarker[2].value.split(",")]
-                else:
-                    return []
+            if submarker[0].value != "extra":
+                return []
+            if submarker[1].value == "==":
+                return [submarker[2].value]
+            elif submarker[1].value == "in":
+                return [v.strip() for v in submarker[2].value.split(",")]
             else:
                 return []
         else:

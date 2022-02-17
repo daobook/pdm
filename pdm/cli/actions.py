@@ -799,10 +799,7 @@ def get_latest_version(project: Project) -> str | None:
 
     cache_key = hashlib.sha224(sys.executable.encode()).hexdigest()
     cache_file = project.cache("self-check") / cache_key
-    if cache_file.exists():
-        state = json.loads(cache_file.read_text())
-    else:
-        state = {}
+    state = json.loads(cache_file.read_text()) if cache_file.exists() else {}
     current_time = datetime.datetime.utcnow().timestamp()
     if (
         state.get("last-check")

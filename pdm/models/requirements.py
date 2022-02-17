@@ -63,8 +63,11 @@ def strip_extras(line: str) -> tuple[str, tuple[str, ...] | None]:
     assert match is not None
     name, extras_str = match.groups()
     extras = (
-        tuple(set(e.strip() for e in extras_str.split(","))) if extras_str else None
+        tuple({e.strip() for e in extras_str.split(",")})
+        if extras_str
+        else None
     )
+
     return name, extras
 
 
@@ -100,13 +103,12 @@ class Requirement:
         if not self.specifier:
             return None
 
-        is_pinned = len(self.specifier) == 1 and next(
+        if is_pinned := len(self.specifier) == 1 and next(
             iter(self.specifier)
         ).operator in (
             "==",
             "===",
-        )
-        if is_pinned:
+        ):
             return next(iter(self.specifier)).version
         return None
 
@@ -154,8 +156,7 @@ class Requirement:
             kwargs["extras"] = tuple(
                 e.strip() for e in kwargs["extras"][1:-1].split(",")
             )
-        version = kwargs.pop("version", None)
-        if version:
+        if version := kwargs.pop("version", None):
             kwargs["specifier"] = get_specifier(version)
         return cls(**kwargs)
 
@@ -190,7 +191,7 @@ class Requirement:
         for vcs in VCS_SCHEMA:
             if vcs in req_dict:
                 repo = cast(str, req_dict.pop(vcs, None))
-                url = vcs + "+" + repo
+                url = f'{vcs}+{repo}'
                 return VcsRequirement.create(name=name, vcs=vcs, url=url, **req_dict)
         if "path" in req_dict or "url" in req_dict:
             return FileRequirement.create(name=name, **req_dict)
@@ -241,17 +242,14 @@ class Requirement:
             "specifier": req.specifier,
             "marker": get_marker(req.marker),
         }
-        if getattr(req, "url", None):
-            link = Link(cast(str, req.url))
-            klass = VcsRequirement if link.is_vcs else FileRequirement
-            return klass(url=req.url, **kwargs)  # type: ignore
-        else:
+        if not getattr(req, "url", None):
             return NamedRequirement(**kwargs)  # type: ignore
+        link = Link(cast(str, req.url))
+        klass = VcsRequirement if link.is_vcs else FileRequirement
+        return klass(url=req.url, **kwargs)  # type: ignore
 
     def _format_marker(self) -> str:
-        if self.marker:
-            return f"; {str(self.marker)}"
-        return ""
+        return f"; {str(self.marker)}" if self.marker else ""
 
 
 @dataclasses.dataclass
@@ -300,17 +298,11 @@ class FileRequirement(Requirement):
             and not result.startswith("./")
             and not result.startswith("../")
         ):
-            result = "./" + result
+            result = f'./{result}'
         return result
 
     def _parse_url(self) -> None:
-        if not self.url:
-            if self.path:
-                self.url = path_to_url(self.path.resolve().as_posix())
-                if not self.path.is_absolute():
-                    project_root = Path(".").resolve().as_posix().lstrip("/")
-                    self.url = self.url.replace(project_root, "${PROJECT_ROOT}")
-        else:
+        if self.url:
             try:
                 self.path = Path(
                     url_to_path(
@@ -322,6 +314,11 @@ class FileRequirement(Requirement):
                 )
             except AssertionError:
                 pass
+        elif self.path:
+            self.url = path_to_url(self.path.resolve().as_posix())
+            if not self.path.is_absolute():
+                project_root = Path(".").resolve().as_posix().lstrip("/")
+                self.url = self.url.replace(project_root, "${PROJECT_ROOT}")
         self._parse_name_from_url()
 
     @property
@@ -357,12 +354,8 @@ class FileRequirement(Requirement):
             filename = os.path.basename(url_without_fragments(self.url))
             if filename.endswith(".whl"):
                 self.name, self.version = parse_name_version_from_wheel(filename)
-            else:
-                match = _egg_info_re.match(filename)
-                # Filename is like `<name>-<version>.tar.gz`, where name will be
-                # extracted and version will be left to be determined from the metadata.
-                if match:
-                    self.name = match.group(1)
+            elif match := _egg_info_re.match(filename):
+                self.name = match.group(1)
 
     def _check_installable(self) -> None:
         assert self.path
@@ -454,8 +447,7 @@ def filter_requirements_with_extras(
             if not elements or set(extras) & set(elements):
                 result.append(_r.as_line())
 
-    extras_not_found = [e for e in extras if e not in extras_in_meta]
-    if extras_not_found:
+    if extras_not_found := [e for e in extras if e not in extras_in_meta]:
         warnings.warn(ExtrasError(extras_not_found))
 
     return result

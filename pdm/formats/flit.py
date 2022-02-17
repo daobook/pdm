@@ -46,16 +46,13 @@ def get_docstring_and_version_via_ast(
     # read as bytes to enable custom encodings
     node = ast.parse(target.read_bytes())
     for child in node.body:
-        # Only use the version from the given module if it's a simple
-        # string assignment to __version__
-        is_version_str = (
+        if is_version_str := (
             isinstance(child, ast.Assign)
             and len(child.targets) == 1
             and isinstance(child.targets[0], ast.Name)
             and child.targets[0].id == "__version__"
             and isinstance(child.value, ast.Str)
-        )
-        if is_version_str:
+        ):
             version: Optional[str] = cast(ast.Str, cast(ast.Assign, child).value).s
             break
     else:

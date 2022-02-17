@@ -25,10 +25,12 @@ from pip import __file__ as pip_location
 
 
 def _all_plugins() -> list[str]:
-    result: set[str] = set()
-    for dist in importlib_metadata.distributions():
-        if any(ep.group in ("pdm", "pdm.plugin") for ep in dist.entry_points):
-            result.add(normalize_name(dist.metadata["Name"]))
+    result: set[str] = {
+        normalize_name(dist.metadata["Name"])
+        for dist in importlib_metadata.distributions()
+        if any(ep.group in ("pdm", "pdm.plugin") for ep in dist.entry_points)
+    }
+
     return sorted(result)
 
 
@@ -150,8 +152,7 @@ class RemoveCommand(BaseCommand):
                 package = Package(key, "0.0.0", {})
                 if package not in graph:
                     continue
-                for dep in graph.iter_children(package):
-                    temp.append(dep)
+                temp.extend(iter(graph.iter_children(package)))
                 graph.remove(package)
 
             to_resolve.clear()

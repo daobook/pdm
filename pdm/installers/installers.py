@@ -30,15 +30,12 @@ if TYPE_CHECKING:
 
 @lru_cache()
 def _is_python_package(root: str | Path) -> bool:
-    for child in Path(root).iterdir():
-        if (
+    return any((
             child.is_file()
             and child.suffix in (".py", ".pyc", ".pyo", ".pyd")
             or child.is_dir()
             and _is_python_package(child)
-        ):
-            return True
-    return False
+        ) for child in Path(root).iterdir())
 
 
 @lru_cache()
@@ -152,10 +149,13 @@ class InstallDestination(SchemeDictionaryDestination):
     ) -> None:
         if self.symlink_to:
             # Create symlinks to the cached location
-            for relpath in _create_symlinks_recursively(
-                self.symlink_to, self.scheme_dict[scheme]
-            ):
-                records.append(RecordEntry(relpath.replace("\\", "/"), None, None))
+            records.extend(
+                RecordEntry(relpath.replace("\\", "/"), None, None)
+                for relpath in _create_symlinks_recursively(
+                    self.symlink_to, self.scheme_dict[scheme]
+                )
+            )
+
         return super().finalize_installation(scheme, record_file_path, records)
 
 
@@ -345,9 +345,7 @@ def _install_wheel(
 def _get_kind(environment: Environment) -> str:
     if os.name != "nt":
         return "posix"
-    is_32bit = environment.interpreter.is_32bit
-    # TODO: support win arm64
-    if is_32bit:
+    if is_32bit := environment.interpreter.is_32bit:
         return "win-ia32"
     else:
         return "win-amd64"

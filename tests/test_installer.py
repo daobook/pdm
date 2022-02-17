@@ -201,5 +201,5 @@ def test_compress_file_list_for_rename():
     }
     abs_paths = {os.path.join(project_root, path) for path in paths}
     assert sorted(compress_for_rename(abs_paths)) == [
-        os.path.join(project_root, "test-removal" + os.sep)
+        os.path.join(project_root, f'test-removal{os.sep}')
     ]

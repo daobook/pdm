@@ -63,7 +63,7 @@ def test_find_python_in_path(tmp_path):
         found_version_of_executable = re.split(
             r"(python@[\d.]*\d+)", posix_path_to_executable
         )
-        posix_path_to_executable = "".join(found_version_of_executable[0:2])
+        posix_path_to_executable = "".join(found_version_of_executable[:2])
     assert (
         utils.find_python_in_path(sys.prefix)
         .as_posix()

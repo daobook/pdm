@@ -14,9 +14,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def ask(question: str, default: str, use_default: bool = False) -> str:
-        if use_default:
-            return default
-        return click.prompt(question, default=default)
+        return default if use_default else click.prompt(question, default=default)
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(

@@ -273,8 +273,7 @@ def project_no_init(tmp_path, mocker, core):
         os.environ.pop("PEP582_PACKAGES", None)
         os.environ.pop("NO_SITE_PACKAGES", None)
         pythonpath = os.environ.pop("PYTHONPATH", "")
-        pythonpath = remove_pep582_path_from_pythonpath(pythonpath)
-        if pythonpath:
+        if pythonpath := remove_pep582_path_from_pythonpath(pythonpath):
             os.environ["PYTHONPATH"] = pythonpath
         yield p
     # Restore the config items

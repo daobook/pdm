@@ -83,16 +83,14 @@ def prepare_pip_source_args(
     for source in sources:
         if source.get("type") == "find_links":
             pip_args.extend(["--find-links", source["url"]])
-        else:  # index urls
-            if first_index:
-                pip_args.extend(["--index-url", source["url"]])
-                first_index = False
-            else:
-                pip_args.extend(["--extra-index-url", source["url"]])
+        elif first_index:
+            pip_args.extend(["--index-url", source["url"]])
+            first_index = False
+        else:
+            pip_args.extend(["--extra-index-url", source["url"]])
         # Trust the host if it's not verified.
         if not source.get("verify_ssl", True):
-            hostname = parse.urlparse(source["url"]).hostname
-            if hostname:
+            if hostname := parse.urlparse(source["url"]).hostname:
                 pip_args.extend(["--trusted-host", hostname])
     return pip_args
 
@@ -272,7 +270,7 @@ def add_ssh_scheme_to_git_uri(uri: str) -> str:
     """Cleans VCS uris from pip format"""
     # Add scheme for parsing purposes, this is also what pip does
     if "://" not in uri:
-        uri = "ssh://" + uri
+        uri = f'ssh://{uri}'
         parsed = parse.urlparse(uri)
         if ":" in parsed.netloc:
             netloc, _, path_start = parsed.netloc.rpartition(":")
@@ -337,9 +335,8 @@ def open_file(url: str, session: Session | None = None) -> Iterator[BinaryIO]:
         local_path = url_to_path(url)
         if os.path.isdir(local_path):
             raise ValueError("Cannot open directory for read: {}".format(url))
-        else:
-            with open(local_path, "rb") as local_file:
-                yield local_file
+        with open(local_path, "rb") as local_file:
+            yield local_file
     else:
         assert session
         headers = {"Accept-Encoding": "identity"}
@@ -531,14 +528,13 @@ def is_url(url: str) -> bool:
 def fs_supports_symlink() -> bool:
     if not hasattr(os, "symlink"):
         return False
-    if sys.platform == "win32":
-        with tempfile.NamedTemporaryFile(prefix="TmP") as tmp_file:
-            temp_dir = os.path.dirname(tmp_file.name)
-            dest = os.path.join(temp_dir, "{}-{}".format(tmp_file.name, "b"))
-            try:
-                os.symlink(tmp_file.name, dest)
-                return True
-            except (OSError, NotImplementedError):
-                return False
-    else:
+    if sys.platform != "win32":
         return True
+    with tempfile.NamedTemporaryFile(prefix="TmP") as tmp_file:
+        temp_dir = os.path.dirname(tmp_file.name)
+        dest = os.path.join(temp_dir, "{}-{}".format(tmp_file.name, "b"))
+        try:
+            os.symlink(tmp_file.name, dest)
+            return True
+        except (OSError, NotImplementedError):
+            return False

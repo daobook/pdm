@@ -49,12 +49,11 @@ class CachedPackage:
     def remove_referrer(self, path: str) -> None:
         """Remove a referrer"""
         path = os.path.normcase(os.path.expanduser(os.path.abspath(path)))
-        referrers = self.referrers - {path}
-        if not referrers:
-            self.cleanup()
-        else:
+        if referrers := self.referrers - {path}:
             (self.path / "referrers").write_text("\n".join(referrers) + "\n", "utf8")
             self._referrers = None
+        else:
+            self.cleanup()
 
     def scheme(self) -> dict[str, str]:
         """The install scheme for the package"""

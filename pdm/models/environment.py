@@ -37,7 +37,7 @@ def _get_shebang_path(executable: str, is_launcher: bool) -> bytes:
     and installer use a clever hack to make the shebang after ``/bin/sh``,
     where the interpreter path is quoted.
     """
-    if is_launcher or " " not in executable and (len(executable) + 3) <= 127:
+    if is_launcher or " " not in executable and len(executable) <= 124:
         return executable.encode("utf-8")
     return shlex.quote(executable).encode("utf-8")
 
@@ -53,12 +53,10 @@ def _replace_shebang(contents: bytes, new_executable: bytes) -> bytes:
     _complex_shebang_re = rb"^'''exec' ('.+?') \"\$0\""
     _simple_shebang_re = rb"^#!(.+?)\s*$"
     match = re.search(_complex_shebang_re, contents, flags=re.M)
-    if match:
-        return contents.replace(match.group(1), new_executable, 1)
-    else:
+    if not match:
         match = re.search(_simple_shebang_re, contents, flags=re.M)
         assert match is not None
-        return contents.replace(match.group(1), new_executable, 1)
+    return contents.replace(match.group(1), new_executable, 1)
 
 
 class Environment:

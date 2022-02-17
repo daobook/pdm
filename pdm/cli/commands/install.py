@@ -33,8 +33,7 @@ class Command(BaseCommand):
         if not project.meta and click._compat.isatty(sys.stdout):
             actions.ask_for_import(project)
 
-        strategy = actions.check_lockfile(project, False)
-        if strategy:
+        if strategy := actions.check_lockfile(project, False):
             if options.check:
                 project.core.ui.echo(
                     "Please run `pdm lock` to update the lock file", err=True

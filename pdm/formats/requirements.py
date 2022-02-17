@@ -52,7 +52,7 @@ def ireq_as_line(ireq: InstallRequirement, environment: Environment) -> str:
         line = "-e {}".format(ireq.link)
     else:
         if not ireq.req:
-            req = parse_requirement("dummy @" + ireq.link.url)  # type: ignore
+            req = parse_requirement(f'dummy @{ireq.link.url}')
             req.name = Candidate(req, environment).metadata.metadata["Name"]
             ireq.req = req  # type: ignore
 
@@ -136,8 +136,7 @@ def export(
             req = candidate
         lines.append(req.as_line())
         if options.hashes and getattr(candidate, "hashes", None):
-            for item in candidate.hashes.values():  # type: ignore
-                lines.append(f" \\\n    --hash={item}")
+            lines.extend(f" \\\n    --hash={item}" for item in candidate.hashes.values())
         lines.append("\n")
     sources = project.tool_settings.get("source", [])
     for source in sources:

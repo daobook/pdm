@@ -47,10 +47,12 @@ vcs = pip_shims.VcsSupport()
 def _dist_info_files(whl_zip: ZipFile) -> list[str]:
     """Identify the .dist-info folder inside a wheel ZipFile."""
     res = []
-    for path in whl_zip.namelist():
-        m = re.match(r"[^/\\]+-[^/\\]+\.dist-info/", path)
-        if m:
-            res.append(path)
+    res.extend(
+        path
+        for path in whl_zip.namelist()
+        if (m := re.match(r"[^/\\]+-[^/\\]+\.dist-info/", path))
+    )
+
     if res:
         return res
     raise Exception("No .dist-info folder found in wheel")
@@ -149,12 +151,7 @@ class Candidate:
         if self.req.revision:  # type: ignore
             return self.req.revision  # type: ignore
         if not (self.ireq.source_dir and os.path.exists(self.ireq.source_dir)):
-            # It happens because the cached wheel is hit and the source code isn't
-            # pulled to local. In this case the link url must contain the full commit
-            # hash which can be taken as the revision safely.
-            # See more info at https://github.com/pdm-project/pdm/issues/349
-            rev = get_rev_from_url(self.ireq.original_link.url)  # type: ignore
-            if rev:
+            if rev := get_rev_from_url(self.ireq.original_link.url):
                 return rev
         return vcs.get_backend(self.req.vcs).get_revision(  # type: ignore
             cast(str, self.ireq.source_dir)
@@ -246,8 +243,7 @@ class Candidate:
                 if not self.link:
                     raise CandidateNotFound("No candidate is found for %s", self)
             if allow_all and not self.req.editable:
-                cached = self._get_cached_wheel()
-                if cached:
+                if cached := self._get_cached_wheel():
                     self.wheel = cached.file_path
                     return
             downloader = pip_shims.Downloader(finder.session, "off")  # type: ignore
@@ -304,8 +300,7 @@ class Candidate:
         self.prepare()
         if self.wheel:
             return self.wheel
-        cached = self._get_cached_wheel()
-        if cached:
+        if cached := self._get_cached_wheel():
             self.wheel = cached.file_path
             return self.wheel  # type: ignore
         assert self.source_dir, "Source directory isn't ready yet"
@@ -423,10 +418,7 @@ class Candidate:
                 venv_prefix = get_venv_like_prefix(
                     self.environment.interpreter.executable
                 )
-                if venv_prefix is not None:
-                    src_dir = venv_prefix / "src"
-                else:
-                    src_dir = Path("src")
+                src_dir = venv_prefix / "src" if venv_prefix is not None else Path("src")
             if not src_dir.is_dir():
                 src_dir.mkdir()
             ireq.ensure_has_source_dir(str(src_dir))

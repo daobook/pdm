@@ -65,9 +65,7 @@ class Command(BaseCommand):
 
     def handle(self, project: Project, options: argparse.Namespace) -> None:
         result = project.get_repository().search(options.query)
-        terminal_width = None
-        if sys.stdout.isatty():
-            terminal_width = get_terminal_size()[0]
+        terminal_width = get_terminal_size()[0] if sys.stdout.isatty() else None
         print_results(
             project.core.ui,
             result,

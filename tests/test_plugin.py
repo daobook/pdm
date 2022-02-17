@@ -14,9 +14,7 @@ class HelloCommand(BaseCommand):
         parser.add_argument("-n", "--name", help="The person's name")
 
     def handle(self, project, options) -> None:
-        greeting = "Hello world"
-        if options.name:
-            greeting = f"Hello, {options.name}"
+        greeting = f"Hello, {options.name}" if options.name else "Hello world"
         print(greeting)
 
 

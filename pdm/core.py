@@ -159,10 +159,7 @@ class Core:
                 should_show_tb = not isinstance(err, PdmUsageError)
                 if self.ui.verbosity > termui.NORMAL and should_show_tb:
                     raise cast(Exception, err).with_traceback(traceback)
-                self.ui.echo(
-                    f"{termui.red('[' + etype.__name__ + ']')}: {err}",  # type: ignore
-                    err=True,
-                )
+                self.ui.echo(f'{termui.red(f"[{etype.__name__}]")}: {err}', err=True)
                 if should_show_tb:
                     self.ui.echo(
                         "Add '-v' to see the detailed traceback", fg="yellow", err=True

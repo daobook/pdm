@@ -136,8 +136,7 @@ class PoetryMetaConverter(MetaConverter):
             )
             req = _convert_req(key, req_dict)
             if optional:
-                extra = next((k for k, v in extras.items() if key in v), None)
-                if extra:
+                if extra := next((k for k, v in extras.items() if key in v), None):
                     self._data.setdefault("optional-dependencies", {}).setdefault(
                         extra, []
                     ).append(req)

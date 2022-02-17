@@ -28,7 +28,7 @@ def load_config(file_path: Path) -> Dict[str, Any]:
                     {f"{k}.{sub_k}": sub_v for sub_k, sub_v in get_item(v).items()}
                 )
             else:
-                result.update({k: v})
+                result[k] = v
         return result
 
     if not file_path.is_file():

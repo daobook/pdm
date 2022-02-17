@@ -49,7 +49,7 @@ class Command(BaseCommand):
                 (termui.cyan("PDM version:", bold=True), project.core.version),
                 (
                     termui.cyan("Python Interpreter:", bold=True),
-                    interpreter.executable + f" ({interpreter.identifier})",
+                    f'{interpreter.executable} ({interpreter.identifier})',
                 ),
                 (termui.cyan("Project Root:", bold=True), project.root.as_posix()),
                 (
@@ -57,4 +57,5 @@ class Command(BaseCommand):
                     str(project.environment.packages_path),
                 ),
             ]
+
             project.core.ui.display_columns(rows)

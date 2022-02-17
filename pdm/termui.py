@@ -46,9 +46,10 @@ def supports_ansi() -> bool:
         return (
             os.getenv("ANSICON") is not None
             or os.getenv("WT_SESSION") is not None
-            or "ON" == os.getenv("ConEmuANSI")
-            or "xterm" == os.getenv("Term")
+            or os.getenv("ConEmuANSI") == "ON"
+            or os.getenv("Term") == "xterm"
         )
+
 
     try:
         return os.isatty(sys.stdout.fileno())
@@ -79,7 +80,7 @@ class DummySpinner:
         click.echo(text)
 
     def stop_and_persist(self, symbol: str = " ", text: Optional[str] = None) -> None:
-        click.echo(symbol + " " + (text or ""))
+        click.echo(f'{symbol} ' + ((text or "")))
 
     succeed = fail = start
 
@@ -131,10 +132,7 @@ class UI:
         def get_aligner(align: str) -> Callable:
             if align == ">":
                 return rjust
-            if align == "^":
-                return centerize
-            else:
-                return ljust
+            return centerize if align == "^" else ljust
 
         sizes = list(
             map(

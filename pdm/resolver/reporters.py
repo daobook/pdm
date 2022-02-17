@@ -38,7 +38,7 @@ class SpinnerReporter(BaseReporter):
         """Called before the resolution actually starts."""
         log_title("Start resolving requirements")
         for req in self.requirements:
-            logger.info("  " + req.as_line())
+            logger.info(f'  {req.as_line()}')
 
     def ending_round(self, index: int, state: State) -> None:
         """Called before each round of resolution ends.
